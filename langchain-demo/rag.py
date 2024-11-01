@@ -13,7 +13,7 @@ from langchain.chains import create_retrieval_chain
 def getDocumentFromWeb(url):
     loader = WebBaseLoader(url)
     docs = loader.load()
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
     chunks = text_splitter.split_documents(docs)
     return chunks
 
@@ -39,10 +39,19 @@ def createChain(vector_store):
 
     return retrieval_chain
 
+def processChat(chain, question):
+    response = chain.invoke({"input": question})
+    return response['answer']
 
-docs = getDocumentFromWeb("https://ethresear.ch/t/local-fee-markets-in-ethereum/20754")
-vector_store = createVectorStore(docs)
-chain = createChain(vector_store)
+if __name__ == "__main__":
+    docs = getDocumentFromWeb("https://ethresear.ch/t/local-fee-markets-in-ethereum/20754")
+    vector_store = createVectorStore(docs)
+    chain = createChain(vector_store)
 
-response = chain.invoke({"input": "What is this proposal about?"})
-print(response)
+    while True:
+        userInput = input("You: ")
+        if userInput == "exit":
+            break
+        
+        response = processChat(chain, userInput)
+        print("Assistant:", response)
