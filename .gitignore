@@ -2,8 +2,5 @@
 # virtual environment
 env/
 
-# requirements
-requirements.txt
-
 # environment
 .env
