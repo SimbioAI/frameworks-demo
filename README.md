@@ -28,10 +28,10 @@ python -m venv env
 
 # Activate the virtual environment
 # On Windows (PowerShell):
-env/Scripts/Activate.ps1
+.venv/Scripts/Activate.ps1
 
 # On Windows (Command Prompt):
-env\Scripts\activate.bat
+.venv\Scripts\activate.bat
 
 # On Unix or MacOS:
 source env/bin/activate
