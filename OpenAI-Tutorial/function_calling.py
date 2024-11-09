@@ -337,6 +337,7 @@ second_response = llm.predict_messages(
         ),
     ],
     tools=tools,
+    tool_choice="auto",
 )
 # {'tool_calls': {'id': 'call_pQaEKvjhquG7oCndg3XwIrY8', 'function': {'arguments': '{"loc_origin":"AMS","loc_destination":"JFK"}', 'name': 'get_flight_info'}, 'type': 'function'}},
 print(second_response)
@@ -359,13 +360,13 @@ third_response = llm.predict_messages(
         ),
     ],
     tools=tools,
+    tool_choice="auto",
 )
 
 print(third_response)
-# content='Your flight from Amsterdam (AMS) to New York (JFK) with KLM on
-# November 9, 2024, at 23:10 has been successfully booked. If you need any
-# further assistance or details, feel free to ask!'
-# ? Should return the file complaint function.
+# content='' additional_kwargs={'tool_calls': [{'id': 'call_5feKEDEYyI6AHMgj2TaxFe5c',
+# 'function': {'arguments': '{"name":"Jane Harris","email":"jane@harris.com",
+# "text":"I missed my flight, which was an unpleasant surprise."}', 'name': 'file_complaint'},
 
 # Conversational reply at the end of requests
 
@@ -374,7 +375,9 @@ fourth_response = llm.predict_messages(
         HumanMessage(content=user_prompt),
         AIMessage(content=str(first_response.additional_kwargs)),
         AIMessage(content=str(second_response.additional_kwargs)),
-        AIMessage(content=str(third_response.additional_kwargs)),
+        AIMessage(
+            content=f"Completed function {str(third_response.additional_kwargs)}"
+        ),
         AIMessage(
             role="function",
             additional_kwargs={
@@ -386,8 +389,14 @@ fourth_response = llm.predict_messages(
         ),
     ],
     tools=tools,
+    tool_choice="auto",
 )
 
 print(fourth_response)
-# didn't work since the 3rd response is not taking into consideration the complaint.
+# content='I have completed the following tasks for you:\n\n1. **Flight Information**:
+# The next flight from Amsterdam (AMS) to New York (JFK) is booked.\n2. **Flight Booking**:
+# Your flight has been successfully booked.\n3. **Complaint Filed**: A complaint regarding
+# your missed flight has been filed, and a copy has been sent to your email at jane@harris.com.
+# \n\nIf you need any further assistance, feel free to ask!'
+
 # TODO: Handling edge cases in the response
