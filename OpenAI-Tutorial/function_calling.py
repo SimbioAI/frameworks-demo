@@ -154,100 +154,107 @@ second_completion = openai.chat.completions.create(
         {"role": "user", "content": user_prompt},
         {"role": "function", "name": output.function_call.name, "content": flight},
     ],
-    functions=function_description,
-    function_call="auto",
+    functions=function_description,  # ! Deprecated method, do not use
+    function_call="auto",  # ! Deprecated method, do not use
 )
 response = second_completion.choices[0].message.content
 print(response)
 
 
 # --------------------------------------------------------------
-# Include Multiple Functions
+# Include Multiple Functions as tools since function is deprecated.
 # --------------------------------------------------------------
 
-# Expand on function descriptions (3 functions)
+# Create 3 functions
 
-function_descriptions_multiple = [
+tools = [
     {
-        "name": "get_flight_info",
-        "description": "Get flight information between two locations",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "loc_origin": {
-                    "type": "string",
-                    "description": "The departure airport, e.g. DUS",
+        "type": "function",
+        "function": {
+            "name": "get_flight_info",
+            "description": "Get flight information between two locations",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "loc_origin": {
+                        "type": "string",
+                        "description": "The departure airport, e.g. DUS",
+                    },
+                    "loc_destination": {
+                        "type": "string",
+                        "description": "The destination airport, e.g. HAM",
+                    },
                 },
-                "loc_destination": {
-                    "type": "string",
-                    "description": "The destination airport, e.g. HAM",
-                },
+                "required": ["loc_origin", "loc_destination"],
             },
-            "required": ["loc_origin", "loc_destination"],
         },
     },
     {
-        "name": "book_flight",
-        "description": "Book a flight based on flight information",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "loc_origin": {
-                    "type": "string",
-                    "description": "The departure airport, e.g. DUS",
+        "type": "function",
+        "function": {
+            "name": "book_flight",
+            "description": "Book a flight based on flight information",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "loc_origin": {
+                        "type": "string",
+                        "description": "The departure airport, e.g. DUS",
+                    },
+                    "loc_destination": {
+                        "type": "string",
+                        "description": "The destination airport, e.g. HAM",
+                    },
+                    "datetime": {
+                        "type": "string",
+                        "description": "The date and time of the flight, e.g. 2023-01-01 01:01",
+                    },
+                    "airline": {
+                        "type": "string",
+                        "description": "The service airline, e.g. Lufthansa",
+                    },
                 },
-                "loc_destination": {
-                    "type": "string",
-                    "description": "The destination airport, e.g. HAM",
-                },
-                "datetime": {
-                    "type": "string",
-                    "description": "The date and time of the flight, e.g. 2023-01-01 01:01",
-                },
-                "airline": {
-                    "type": "string",
-                    "description": "The service airline, e.g. Lufthansa",
-                },
+                "required": ["loc_origin", "loc_destination", "datetime", "airline"],
             },
-            "required": ["loc_origin", "loc_destination", "datetime", "airline"],
         },
     },
     {
-        "name": "file_complaint",
-        "description": "File a complaint as a customer",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "description": "The name of the user, e.g. John Doe",
+        "type": "function",
+        "function": {
+            "name": "file_complaint",
+            "description": "File a complaint as a customer",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The name of the user, e.g. John Doe",
+                    },
+                    "email": {
+                        "type": "string",
+                        "description": "The email address of the user, e.g. john@doe.com",
+                    },
+                    "text": {
+                        "type": "string",
+                        "description": "Description of issue",
+                    },
                 },
-                "email": {
-                    "type": "string",
-                    "description": "The email address of the user, e.g. john@doe.com",
-                },
-                "text": {
-                    "type": "string",
-                    "description": "Description of issue",
-                },
+                "required": ["name", "email", "text"],
             },
-            "required": ["name", "email", "text"],
         },
     },
 ]
-
-print(function_descriptions_multiple)
 
 
 def ask_and_reply(prompt):
     """Give LLM a given prompt and get an answer."""
 
-    completion = openai.ChatCompletion.create(
+    completion = openai.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
-        # add function calling
-        functions=function_descriptions_multiple,
-        function_call="auto",  # specify the function call
+        # Changed to tools and tool_choice
+        tools=tools,
+        tool_choice="auto",  # specify the tool choice
     )
 
     output = completion.choices[0].message
@@ -258,6 +265,7 @@ def ask_and_reply(prompt):
 
 user_prompt = "When's the next flight from Amsterdam to New York?"
 print(ask_and_reply(user_prompt))
+# name='get_flight_info'
 
 # Get info for the next prompt
 
@@ -280,11 +288,13 @@ print(flight_airline)
 
 user_prompt = f"I want to book a flight from {origin} to {destination} on {flight_datetime} with {flight_airline}"
 print(ask_and_reply(user_prompt))
+# name='get_flight_info'
 
 # Scenario 3: File a complaint
 
 user_prompt = "This is John Doe. I want to file a complaint about my missed flight. It was an unpleasant surprise. Email me a copy of the complaint to john@doe.com."
 print(ask_and_reply(user_prompt))
+# name='file_complaint'
 
 # --------------------------------------------------------------
 # Make It Conversational With Langchain
@@ -297,7 +307,7 @@ llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 user_prompt = """
 This is Jane Harris. I am an unhappy customer that wants you to do several things.
 First, I neeed to know when's the next flight from Amsterdam to New York.
-Please proceed to book that flight for me.
+Then proceed to book that flight for me.
 Also, I want to file a complaint about my missed flight. It was an unpleasant surprise. 
 Email me a copy of the complaint to jane@harris.com.
 Please give me a confirmation after all of these are done.
@@ -305,9 +315,7 @@ Please give me a confirmation after all of these are done.
 
 # Returns the function of the first request (get_flight_info)
 
-first_response = llm.predict_messages(
-    [HumanMessage(content=user_prompt)], functions=function_descriptions_multiple
-)
+first_response = llm.predict_messages([HumanMessage(content=user_prompt)], tools=tools)
 
 print(first_response)
 
@@ -319,16 +327,18 @@ second_response = llm.predict_messages(
         HumanMessage(content=user_prompt),
         AIMessage(content=str(first_response.additional_kwargs)),
         AIMessage(
-            role="function",
+            role="tool",
             additional_kwargs={
-                "name": first_response.additional_kwargs["function_call"]["name"]
+                "name": first_response.additional_kwargs["tool_calls"][0]["function"][
+                    "name"
+                ]
             },
-            content=f"Completed function {first_response.additional_kwargs['function_call']['name']}",
+            content=f"Completed function {first_response.additional_kwargs['tool_calls'][0]['function']['name']}",
         ),
     ],
-    functions=function_descriptions_multiple,
+    tools=tools,
 )
-
+# {'tool_calls': {'id': 'call_pQaEKvjhquG7oCndg3XwIrY8', 'function': {'arguments': '{"loc_origin":"AMS","loc_destination":"JFK"}', 'name': 'get_flight_info'}, 'type': 'function'}},
 print(second_response)
 
 # Returns the function of the third request (file_complaint)
@@ -339,17 +349,23 @@ third_response = llm.predict_messages(
         AIMessage(content=str(first_response.additional_kwargs)),
         AIMessage(content=str(second_response.additional_kwargs)),
         AIMessage(
-            role="function",
+            role="tool",
             additional_kwargs={
-                "name": second_response.additional_kwargs["function_call"]["name"]
+                "name": second_response.additional_kwargs["tool_calls"][0]["function"][
+                    "name"
+                ]
             },
-            content=f"Completed function {second_response.additional_kwargs['function_call']['name']}",
+            content=f"Completed function {second_response.additional_kwargs["tool_calls"][0]['function']["name"]}. What else should be done?",
         ),
     ],
-    functions=function_descriptions_multiple,
+    tools=tools,
 )
 
 print(third_response)
+# content='Your flight from Amsterdam (AMS) to New York (JFK) with KLM on
+# November 9, 2024, at 23:10 has been successfully booked. If you need any
+# further assistance or details, feel free to ask!'
+# ? Should return the file complaint function.
 
 # Conversational reply at the end of requests
 
@@ -362,12 +378,16 @@ fourth_response = llm.predict_messages(
         AIMessage(
             role="function",
             additional_kwargs={
-                "name": third_response.additional_kwargs["function_call"]["name"]
+                "name": third_response.additional_kwargs["tool_calls"][0]["function"][
+                    "name"
+                ]
             },
-            content=f"Completed function {third_response.additional_kwargs['function_call']['name']}",
+            content=f"Completed function {third_response.additional_kwargs["tool_calls"][0]['function']["name"]}",
         ),
     ],
-    functions=function_descriptions_multiple,
+    tools=tools,
 )
 
 print(fourth_response)
+# didn't work since the 3rd response is not taking into consideration the complaint.
+# TODO: Handling edge cases in the response
