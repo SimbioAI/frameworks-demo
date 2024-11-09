@@ -5,8 +5,8 @@
 import os
 import json
 import openai
-from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 from langchain.chat_models import ChatOpenAI
 from langchain.schema import HumanMessage, AIMessage, ChatMessage
 
@@ -14,33 +14,61 @@ from langchain.schema import HumanMessage, AIMessage, ChatMessage
 # --------------------------------------------------------------
 # Load OpenAI API Token From the .env File
 # --------------------------------------------------------------
-
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
-
 
 # --------------------------------------------------------------
 # Ask ChatGPT a Question
 # --------------------------------------------------------------
 
-completion = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo-0613",
+completion = openai.chat.completions.create(
+    model="gpt-4o-mini",
     messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
         {
             "role": "user",
             "content": "When's the next flight from Amsterdam to New York?",
         },
     ],
+    max_tokens=150,  # Max number of tokens (words/punctuation)
+    temperature=0.7,  # Controls randomness; higher = more random
+    top_p=0.9,  # Nucleus sampling: only consider the top 90% of probability mass
+    frequency_penalty=0.5,  # Discourages repeated words/phrases
+    presence_penalty=0.3,  # Encourages new topic introduction
 )
 
 output = completion.choices[0].message.content
 print(output)
 
+############ Use OpenAI’s Function Calling Feature ############
+
 # --------------------------------------------------------------
-# Use OpenAI’s Function Calling Feature
+# 1. Add a Function that you want the model to be able to call
 # --------------------------------------------------------------
 
-function_descriptions = [
+
+def get_flight_info(loc_origin, loc_destination):
+    """
+    Get flight information between two locations.
+    """
+
+    # Example output returned from an API or database
+    flight_info = {
+        "loc_origin": loc_origin,
+        "loc_destination": loc_destination,
+        "datetime": str(datetime.now() + timedelta(hours=2)),
+        "airline": "KLM",
+        "flight": "KL643",
+    }
+
+    return json.dumps(flight_info)
+
+
+# --------------------------------------------------------------
+# 2. Describe your function to the model so it knows how to call it
+# --------------------------------------------------------------
+
+function_description = [
     {
         "name": "get_flight_info",
         "description": "Get flight information between two locations",
@@ -57,49 +85,46 @@ function_descriptions = [
                 },
             },
             "required": ["loc_origin", "loc_destination"],
+            "additionalProperties": False,
         },
     }
 ]
 
+# --------------------------------------------------------------
+# 3. Your application calls the API with your prompt and
+# definitions of the functions the LLM can call
+# --------------------------------------------------------------
+
 user_prompt = "When's the next flight from Amsterdam to New York?"
 
-completion = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo-0613",
+completion = openai.chat.completions.create(
+    model="gpt-4o-mini",
     messages=[{"role": "user", "content": user_prompt}],
     # Add function calling
-    functions=function_descriptions,
-    function_call="auto",  # specify the function call
+    functions=function_description,
+    function_call="auto",  # the model can pick between generating a message or calling a function
 )
 
-# It automatically fills the arguments with correct info based on the prompt
-# Note: the function does not exist yet
+# --------------------------------------------------------------
+# The API responds to your application specifying the function to
+# be called and the arguments to call it with. If the model does not
+# generate a function call, then the response will contain a direct
+# reply to the user in the normal way that Chat Completions does.
+# Note: the function existance is not required!
+# --------------------------------------------------------------
 
 output = completion.choices[0].message
 print(output)
+# ChatCompletionMessage(content=None, refusal=None, role='assistant',
+# audio=None, function_call=FunctionCall(arguments='{"loc_origin":"AMS",
+# "loc_destination":"JFK"}', name='get_flight_info'), tool_calls=None)
+
 
 # --------------------------------------------------------------
-# Add a Function
+# 4. Your application executes the function with the given arguments
 # --------------------------------------------------------------
 
-
-def get_flight_info(loc_origin, loc_destination):
-    """Get flight information between two locations."""
-
-    # Example output returned from an API or database
-    flight_info = {
-        "loc_origin": loc_origin,
-        "loc_destination": loc_destination,
-        "datetime": str(datetime.now() + timedelta(hours=2)),
-        "airline": "KLM",
-        "flight": "KL643",
-    }
-
-    return json.dumps(flight_info)
-
-
-# Use the LLM output to manually call the function
-# The json.loads function converts the string to a Python object
-
+# The json.loads function converts the json string to a Python object
 origin = json.loads(output.function_call.arguments).get("loc_origin")
 destination = json.loads(output.function_call.arguments).get("loc_destination")
 params = json.loads(output.function_call.arguments)
@@ -108,29 +133,33 @@ type(params)
 print(origin)
 print(destination)
 print(params)
-
-# Call the function with arguments
+# {'loc_origin': 'AMS', 'loc_destination': 'JFK'}
 
 chosen_function = eval(output.function_call.name)
 flight = chosen_function(**params)
 
 print(flight)
+# {"loc_origin": "AMS", "loc_destination": "JFK", "datetime": "2024-11-09 21:27:57.352038",
+# "airline": "KLM", "flight": "KL643"}
 
 # --------------------------------------------------------------
-# Add function result to the prompt for a final answer
+# 5. Your application calls the API providing your prompt and
+# the result of the function call your code just executed
 # --------------------------------------------------------------
 
 # The key is to add the function output back to the messages with role: function
-second_completion = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo-0613",
+second_completion = openai.chat.completions.create(
+    model="gpt-4o-mini",
     messages=[
         {"role": "user", "content": user_prompt},
         {"role": "function", "name": output.function_call.name, "content": flight},
     ],
-    functions=function_descriptions,
+    functions=function_description,
+    function_call="auto",
 )
 response = second_completion.choices[0].message.content
 print(response)
+
 
 # --------------------------------------------------------------
 # Include Multiple Functions
@@ -214,7 +243,7 @@ def ask_and_reply(prompt):
     """Give LLM a given prompt and get an answer."""
 
     completion = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo-0613",
+        model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
         # add function calling
         functions=function_descriptions_multiple,
@@ -261,7 +290,7 @@ print(ask_and_reply(user_prompt))
 # Make It Conversational With Langchain
 # --------------------------------------------------------------
 
-llm = ChatOpenAI(model="gpt-3.5-turbo-0613", temperature=0)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 # Start a conversation with multiple requests
 
