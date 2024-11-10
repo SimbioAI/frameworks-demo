@@ -1,13 +1,16 @@
 from enum import Enum
 import json
-
+from dotenv import load_dotenv
 import requests
 from bs4 import BeautifulSoup
 from openai import OpenAI
-from pydantic import BaseModel, Field
+import openai
+from pydantic import BaseModel, ValidationError, Field
+# from typing import Annotated
 
+load_dotenv()
 client = OpenAI()
-MODEL = "gpt-4o-2024-08-06"
+MODEL = "gpt-4o-mini"
 
 
 query = """
@@ -44,7 +47,8 @@ def get_ticket_response_json(query):
                             "type": "array",
                         },
                         "final_resolution": {
-                            "type": "string",
+                            "type": "string",  # "type": ["string", "null"],
+                            # * it is possible to emulate an optional parameter by using a union type with null
                         },
                     },
                     "required": ["steps", "final_resolution"],
@@ -58,8 +62,12 @@ def get_ticket_response_json(query):
     return response.choices[0].message
 
 
-response = get_ticket_response_json(query)
-response.model_dump()
+try:
+    response = get_ticket_response_json(query)
+    response.model_dump()
+except Exception as e:
+    # handle errors like finish_reason, refusal(safety reasons), content_filter, max token etc.
+    print(e.__context__)
 
 response_json = json.loads(response.content)
 for step in response_json["steps"]:
@@ -68,20 +76,24 @@ for step in response_json["steps"]:
 print(response_json["final_resolution"])
 
 # --------------------------------------------------------------
-# Using Pydantic
+# Using Pydantic (recommended by OpenAI)
 # --------------------------------------------------------------
 
 
-class TicketResolution(BaseModel):
-    class Step(BaseModel):
-        description: str = Field(description="Description of the step taken.")
-        action: str = Field(description="Action taken to resolve the issue.")
+# * Chain of thought
+class Step(BaseModel):
+    description: str = Field(description="Description of the step taken.")
+    action: str = Field(description="Action taken to resolve the issue.")
 
+
+class TicketResolution(BaseModel):
     steps: list[Step]
     final_resolution: str = Field(
         description="The final message that will be send to the customer."
     )
     confidence: float = Field(description="Confidence in the resolution (0-1)")
+    # Annotated[float, Field(ge=0, le=1, description="Confidence in the resolution (0-1)")]
+    #! 'minimum' is not permitted." Annotated can be used to add constraints to a field.
 
 
 def get_ticket_response_pydantic(query: str):
@@ -92,13 +104,47 @@ def get_ticket_response_pydantic(query: str):
             {"role": "user", "content": query},
         ],
         response_format=TicketResolution,
+        # max_tokens=200,
     )
 
-    return completion.choices[0].message.parsed
+    return completion.choices[0].message
 
 
-response_pydantic = get_ticket_response_pydantic(query)
-response_pydantic.model_dump()
+try:
+    response_pydantic = get_ticket_response_pydantic(query)
+    # Parse and validate the response content
+    if TicketResolution.model_validate_json(response_pydantic.content):
+        for i, step in enumerate(response_pydantic.parsed.steps):
+            print(f"Step #{i+1}", step.description, sep="- ")
+            print(f"Action #{i+1}", step.action, sep="- ")
+        print(response_pydantic.parsed.final_resolution)
+        print(
+            f"The confidence in the resolution is: {response_pydantic.parsed.confidence}."
+        )
+    elif response_pydantic.refusal:
+        # handle refusal
+        print(response_pydantic.refusal)
+except ValidationError as e:
+    # Handle validation errors
+    print(e.json())
+except Exception as e:
+    # Handle edge cases
+    if type(e) is openai.LengthFinishReasonError:
+        # Retry with a higher max tokens
+        print("Too many tokens: ", e)
+        pass
+    else:
+        # Handle other exceptions
+        print(e)
+
+# TODO: Handling user-generated input
+# * If the input is completely unrelated to the schema, you could include language in your
+# * prompt to specify that you want to return empty parameters, or a specific sentence,
+# * if the model detects that the input is incompatible with the task.
+
+
+# ! Note: Structured data extraction and other methods
+# ! can be implemented using pydantic output parsers.
 
 # --------------------------------------------------------------
 # Example with Enums
@@ -214,3 +260,35 @@ for i in range(len(content)):
     print(f"Analyzing article #{i+1}...")
     summaries.append(get_article_summary(content[i]))
     print("Done.")
+
+for summary in summaries:
+    print(json.dumps(summary.dict(), indent=4))
+
+{
+    "invented_year": 2017,
+    "summary": "Large Language Models (LLMs) are advanced computational models designed for natural language processing, capable of generating human-like text by learning from vast datasets.",
+    "inventors": ["Vaswani", "Devlin", "Radford", "Brown"],
+    "description": "LLMs utilize transformer architectures to process and generate text, leveraging statistical relationships learned from extensive text corpora.",
+    "concepts": [
+        {
+            "title": "Transformer Architecture",
+            "description": "A neural network architecture that uses self-attention mechanisms to improve the processing of sequential data, particularly in natural language tasks.",
+        },
+        {
+            "title": "Tokenization",
+            "description": "The process of converting text into numerical tokens that can be processed by machine learning algorithms, often using methods like byte-pair encoding.",
+        },
+        {
+            "title": "Reinforcement Learning from Human Feedback (RLHF)",
+            "description": "A technique used to fine-tune models based on human preferences, enhancing their ability to generate desirable outputs.",
+        },
+        {
+            "title": "Emergent Abilities",
+            "description": "Capabilities that arise in larger models, such as in-context learning, which are not explicitly programmed but develop through complex interactions within the model.",
+        },
+        {
+            "title": "Bias and Fairness",
+            "description": "The tendency of LLMs to inherit and amplify biases present in their training data, leading to skewed representations of different demographics.",
+        },
+    ],
+}

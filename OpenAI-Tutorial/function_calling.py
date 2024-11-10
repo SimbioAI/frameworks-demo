@@ -8,12 +8,13 @@ import openai
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage, AIMessage, ChatMessage
+from langchain.schema import HumanMessage, AIMessage
 
 
 # --------------------------------------------------------------
 # Load OpenAI API Token From the .env File
 # --------------------------------------------------------------
+
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -172,13 +173,16 @@ tools = [
         "type": "function",
         "function": {
             "name": "get_flight_info",
+            "strict": True,  # * Structured Outputs is turned on, the arguments generated
+            # * by the model for function calls will reliably match the JSON Schema that you provide
             "description": "Get flight information between two locations",
+            # * provide instructions on how to call the function and how to generate the parameters.
             "parameters": {
                 "type": "object",
                 "properties": {
                     "loc_origin": {
                         "type": "string",
-                        "description": "The departure airport, e.g. DUS",
+                        "description": "The departure airport, e.g. DUS",  # * expected format
                     },
                     "loc_destination": {
                         "type": "string",
@@ -193,6 +197,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "book_flight",
+            "strict": True,
             "description": "Book a flight based on flight information",
             "parameters": {
                 "type": "object",
@@ -223,6 +228,7 @@ tools = [
         "function": {
             "name": "file_complaint",
             "description": "File a complaint as a customer",
+            "strict": True,
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -245,6 +251,24 @@ tools = [
     },
 ]
 
+# * using: from pydantic import BaseModel (recommended by OpenAI)
+# class GetDeliveryDate(BaseModel):
+#   order_id: str
+
+# tools = [openai.pydantic_function_tool(GetDeliveryDate)]
+
+
+# * TIPS
+
+# ! If your use case allows, you can use enums to constrain the possible values for arguments.
+# ! This can help reduce hallucinations. If you don’t constrain the output, a user may say “large” or “L”,
+# ! and the model may return either value. Your code may expect a specific structure, so it’s important to
+# ! limit the number of possible formats the model can choose from.
+
+# ! Keep the number of functions low (10-20) for higher accuracy
+
+# ! Fine-tuning may help improve accuracy for function calling
+
 
 def ask_and_reply(prompt):
     """Give LLM a given prompt and get an answer."""
@@ -252,16 +276,21 @@ def ask_and_reply(prompt):
     completion = openai.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
-        # Changed to tools and tool_choice
+        # TODO Consider providing additional information about when to call functions in your system message
         tools=tools,
-        tool_choice="auto",  # specify the tool choice
+        tool_choice="auto",
+        # * The model is configured to automatically select which functions to cal
+        # * tool_choice: {"type": "function", "function": {"name": "my_function"}}
+        # * disable function calling: either provide no tools, or set tool_choice: "none"
     )
 
     output = completion.choices[0].message
     return output
 
 
+# --------------------------------------------------------------
 # Scenario 1: Check flight details
+# --------------------------------------------------------------
 
 user_prompt = "When's the next flight from Amsterdam to New York?"
 print(ask_and_reply(user_prompt))
@@ -284,15 +313,20 @@ flight_airline = json.loads(flight).get("airline")
 print(flight_datetime)
 print(flight_airline)
 
+# --------------------------------------------------------------
 # Scenario 2: Book a new flight
+# --------------------------------------------------------------
 
 user_prompt = f"I want to book a flight from {origin} to {destination} on {flight_datetime} with {flight_airline}"
 print(ask_and_reply(user_prompt))
 # name='get_flight_info'
 
+# --------------------------------------------------------------
 # Scenario 3: File a complaint
+# --------------------------------------------------------------
 
-user_prompt = "This is John Doe. I want to file a complaint about my missed flight. It was an unpleasant surprise. Email me a copy of the complaint to john@doe.com."
+user_prompt = """This is John Doe. I want to file a complaint about my missed flight. It was an unpleasant surprise. 
+Email me a copy of the complaint to john@doe.com."""
 print(ask_and_reply(user_prompt))
 # name='file_complaint'
 
@@ -313,14 +347,18 @@ Email me a copy of the complaint to jane@harris.com.
 Please give me a confirmation after all of these are done.
 """
 
+# --------------------------------------------------------------
 # Returns the function of the first request (get_flight_info)
+# --------------------------------------------------------------
 
 first_response = llm.predict_messages([HumanMessage(content=user_prompt)], tools=tools)
 
 print(first_response)
 
+# --------------------------------------------------------------
 # Returns the function of the second request (book_flight)
 # It takes all the arguments from the prompt but not the returned information
+# --------------------------------------------------------------
 
 second_response = llm.predict_messages(
     [
@@ -339,10 +377,13 @@ second_response = llm.predict_messages(
     tools=tools,
     tool_choice="auto",
 )
-# {'tool_calls': {'id': 'call_pQaEKvjhquG7oCndg3XwIrY8', 'function': {'arguments': '{"loc_origin":"AMS","loc_destination":"JFK"}', 'name': 'get_flight_info'}, 'type': 'function'}},
+# {'tool_calls': {'id': 'call_pQaEKvjhquG7oCndg3XwIrY8', 'function': {'arguments': '{"loc_origin":"AMS","loc_destination":"JFK"}',
+#  'name': 'get_flight_info'}, 'type': 'function'}},
 print(second_response)
 
+# --------------------------------------------------------------
 # Returns the function of the third request (file_complaint)
+# --------------------------------------------------------------
 
 third_response = llm.predict_messages(
     [
@@ -356,7 +397,8 @@ third_response = llm.predict_messages(
                     "name"
                 ]
             },
-            content=f"Completed function {second_response.additional_kwargs["tool_calls"][0]['function']["name"]}. What else should be done?",
+            content=f"Completed function {second_response.additional_kwargs["tool_calls"][0]['function']["name"]}. What else \
+            should be done?",
         ),
     ],
     tools=tools,
@@ -368,7 +410,9 @@ print(third_response)
 # 'function': {'arguments': '{"name":"Jane Harris","email":"jane@harris.com",
 # "text":"I missed my flight, which was an unpleasant surprise."}', 'name': 'file_complaint'},
 
+# --------------------------------------------------------------
 # Conversational reply at the end of requests
+# --------------------------------------------------------------
 
 fourth_response = llm.predict_messages(
     [
