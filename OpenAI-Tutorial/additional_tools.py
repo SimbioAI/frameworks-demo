@@ -2,6 +2,8 @@
 # Reasoning models: Explore advanced reasoning and problem-solving
 # models using o1-preview and o1-mini. The o1 models are currently
 # in beta with limited features as of 12-Nov-2024.
+# Address specific customer issues and perform the action on their behalf:
+# https://cookbook.openai.com/examples/o1/using_reasoning_for_routine_generation
 # --------------------------------------------------------------
 
 
