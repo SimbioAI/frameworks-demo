@@ -3,12 +3,14 @@ import shelve
 from dotenv import load_dotenv
 
 # import time
-import prompt
+from prompt import *
 
 load_dotenv()
 client = OpenAI()
 
 
+# TODO: Create a general agent class and divide the functions even more to make it clearer.
+# TODO: Any specific agent can inherit the general agent class and add specific functions.
 # --------------------------------------------------------------
 # Upload file
 # --------------------------------------------------------------
@@ -29,14 +31,14 @@ vector_store = client.beta.vector_stores.create(
     chunking_strategy={
         "type": "static",
         "static": {
-            "max_chunk_size_tokens": 600,  # must be between 100 and 4096
+            "max_chunk_size_tokens": 1200,  # must be between 100 and 4096
             "chunk_overlap_tokens": 300,  # must not exceed half of max_chunk_size_tokens
         },
     },
     # * Save costs: first GB is free and beyond that, usage is billed at $0.10/GB/day of vector storage.
     expires_after={"anchor": "last_active_at", "days": 7},
 )
-# You can add several files to a vector store by creating batches of up to 500 files.
+# * You can add several files to a vector store by creating batches of up to 500 files.
 vector_store_file = client.beta.vector_stores.files.create_and_poll(
     vector_store_id=vector_store.id,
     file_id=faq_support.id,
@@ -54,7 +56,14 @@ def create_assistant(files, vector_store):
         model="gpt-4o-mini",
         name="Sales Assistant",
         temperature=0.2,
-        instructions=prompt.prompt,
+        instructions=prompt.format(
+            COMPANY_NAME=COMPANY_NAME,
+            COMPANY_VALUES="\n- ".join(
+                COMPANY_VALUES
+            ),  # Join the list items with line breaks for display
+            HELP_DOCUMENTS=HELP_DOCUMENTS,
+            AGENT_NAME=AGENT_NAME,
+        ),
         # *  Code Interpreter, File Search, and Function calling
         tools=[
             {
@@ -73,10 +82,10 @@ def create_assistant(files, vector_store):
             # ,{"type": "function", "function": {...}}
         ],
         # Files and vector stores that are passed at the Assistant level are accessible by all Runs with this Assistant
-        tool_resources=[
-            {"file_search": {"vector_store_ids": [vector_store.id]}},
-            {"code_interpreter": {"file_ids": [files[0]]}},
-        ],
+        tool_resources={
+            "file_search": {"vector_store_ids": [vector_store.id]},
+            "code_interpreter": {"file_ids": [files[0]]},
+        },
     )
     return assistant
 
@@ -112,7 +121,7 @@ def store_thread(wa_id, thread_id):
 # * allows you to introspect how the Assistant is getting to its final results.
 def run_assistant(thread, name):
     # Retrieve the Assistant
-    assistant = client.beta.assistants.retrieve("asst_7Wx2nQwoPWSf710jrdWTDlfE")
+    assistant = client.beta.assistants.retrieve("asst_lxRjWQfE2odUnLRkIrdVq4TY")
 
     #! can stream the response
     # * By default, a Run will use the model and tools configuration specified in Assistant object.
@@ -134,7 +143,7 @@ def run_assistant(thread, name):
 
     citations = []
     # Wait for completion
-    if run.status != "completed":
+    if run.status == "completed":
         # # Be nice to the API
         # time.sleep(0.5)
         # run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
@@ -159,14 +168,14 @@ def run_assistant(thread, name):
     run_steps = client.beta.threads.runs.steps.list(thread_id=thread.id, run_id=run.id)
     print(run_steps)
 
-    run_step = client.beta.threads.runs.steps.retrieve(
-        thread_id=thread.id,
-        run_id=run.id,
-        step_id=run_steps[0].id,
-        # * Inspecting file search chunks
-        include=["step_details.tool_calls[*].file_search.results[*].content"],
-    )
-    print(run_step)
+    # run_step = client.beta.threads.runs.steps.retrieve(
+    #     thread_id=thread.id,
+    #     run_id=run.id,
+    #     step_id=run_steps[0].id,
+    #     # * Inspecting file search chunks
+    #     include=["step_details.tool_calls[*].file_search.results[*].content"],
+    # )
+    # print(run_step)
 
     return message_content.value + "\nCitations:" + "\n".join(citations)
 
@@ -183,7 +192,7 @@ def generate_response(message_body, wa_id, name):
         print(f"Creating new thread for {name} with wa_id {wa_id}")
         thread = client.beta.threads.create(
             # * You can attach vector stores to your Thread that have a default expiration policy of 7 days after they were last active
-            # tool_resources=[{
+            # tool_resources={
             #         "file_search": {
             #         "vector_store_ids": ["vs_2"]
             #       }
@@ -202,7 +211,8 @@ def generate_response(message_body, wa_id, name):
         thread_id=thread_id,
         role="user",
         content=message_body,
-        # *  Can attach files to the thread message: default expiration policy of 7 days after they were last active
+        # * Can attach files to the thread message: default expiration policy of 7 days after they were last active
+        # * In sales maybe an image of a product the client is looking for.
         #           "attachments": [
         #     { "file_id": message_file.id, "tools": [{"type": "code_interpreter"}] }
         #   ],
@@ -220,7 +230,7 @@ def generate_response(message_body, wa_id, name):
 
 new_message = generate_response("What's the check in time?", "123", "John")
 
-new_message = generate_response("What's the pin for the lockbox?", "456", "Farah")
+new_message = generate_response("What's is the name of the company?", "456", "Farah")
 
 new_message = generate_response("What was my previous question?", "123", "John")
 
@@ -230,4 +240,4 @@ while True:
     if user_prompt == "exit":
         break
     else:
-        generate_response(user_prompt, "100", user_name)
+        print(generate_response(user_prompt, "100", user_name))

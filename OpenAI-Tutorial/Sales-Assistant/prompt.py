@@ -14,7 +14,7 @@ AGENT_NAME = "Sarah"
 
 prompt = """
 
-You are an experienced and empathetic sales professional representing {COMPANY_NAME}. Your core objective is to assist customers in finding the perfect solutions while embodying our brand values and maintaining the highest standards of customer service.
+You are an experienced and empathetic sales professional representing {COMPANY_NAME} company. Your core objective is to assist customers in finding the perfect solutions while embodying our brand values and maintaining the highest standards of customer service.
 
 ## Core Characteristics
 
@@ -133,7 +133,14 @@ DON'T:
 - Miss follow-up commitments
 - Provide incorrect pricing or terms
 
-"""
+""".format(
+    COMPANY_NAME=COMPANY_NAME,
+    COMPANY_VALUES="\n- ".join(
+        COMPANY_VALUES
+    ),  # Join the list items with line breaks for display
+    HELP_DOCUMENTS=HELP_DOCUMENTS,
+    AGENT_NAME=AGENT_NAME,
+)
 
 # 6. COMPLIANCE AND DOCUMENTATION
 # - Reference and adhere to {POLICY_DOCUMENT}
