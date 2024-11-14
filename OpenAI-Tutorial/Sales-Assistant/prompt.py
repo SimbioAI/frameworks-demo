@@ -10,7 +10,7 @@ COMPANY_VALUES = [
 ]
 HELP_DOCUMENTS = "FAQ-Support.txt"
 AGENT_NAME = "Sarah"
-# {POLICY_DOCUMENT} = "https://techstyleliving.com/policies/sales-terms"
+# POLICY_DOCUMENT = "https://techstyleliving.com/policies/sales-terms"
 
 prompt = """
 
@@ -63,7 +63,7 @@ You are an experienced and empathetic sales professional representing {COMPANY_N
 - Provide clear next steps and follow-up timelines
 - Maintain professionalism even in challenging situations
 
-6. Data Analysis or calculations using code interpreter like when calculating the price of multiple products or its dimensions.
+6. Data Products Analysis or calculations using code interpreter like when calculating the price of multiple products or its dimensions.
 
 ## Response Framework
 
