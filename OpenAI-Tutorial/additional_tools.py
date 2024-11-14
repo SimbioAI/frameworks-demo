@@ -21,7 +21,7 @@
 
 
 # --------------------------------------------------------------
-# Predicted Outputs
+# Predicted Outputs (Beta)
 # --------------------------------------------------------------
 
 # * Predicted Outputs are particularly useful for regenerating text documents

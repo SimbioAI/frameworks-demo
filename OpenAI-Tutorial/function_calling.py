@@ -33,7 +33,7 @@ completion = openai.chat.completions.create(
     ],
     max_tokens=150,  # Max number of tokens (words/punctuation)
     temperature=0.7,  # Controls randomness; higher = more random
-    top_p=0.9,  # Nucleus sampling: only consider the top 90% of probability mass
+    # top_p=0.9,  # Nucleus sampling: only consider the top 90% of probability mass
     frequency_penalty=0.5,  # Discourages repeated words/phrases
     presence_penalty=0.3,  # Encourages new topic introduction
 )
@@ -135,7 +135,7 @@ print(origin)
 print(destination)
 print(params)
 # {'loc_origin': 'AMS', 'loc_destination': 'JFK'}
-
+eval("1+1")
 chosen_function = eval(output.function_call.name)
 flight = chosen_function(**params)
 
@@ -190,6 +190,7 @@ tools = [
                     },
                 },
                 "required": ["loc_origin", "loc_destination"],
+                "additionalProperties": False,
             },
         },
     },
@@ -220,6 +221,7 @@ tools = [
                     },
                 },
                 "required": ["loc_origin", "loc_destination", "datetime", "airline"],
+                "additionalProperties": False,
             },
         },
     },
@@ -246,6 +248,7 @@ tools = [
                     },
                 },
                 "required": ["name", "email", "text"],
+                "additionalProperties": False,
             },
         },
     },
@@ -336,7 +339,7 @@ print(ask_and_reply(user_prompt))
 
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
-# Start a conversation with multiple requests
+# * Start a conversation with multiple requests
 
 user_prompt = """
 This is Jane Harris. I am an unhappy customer that wants you to do several things.
@@ -377,8 +380,7 @@ second_response = llm.predict_messages(
     tools=tools,
     tool_choice="auto",
 )
-# {'tool_calls': {'id': 'call_pQaEKvjhquG7oCndg3XwIrY8', 'function': {'arguments': '{"loc_origin":"AMS","loc_destination":"JFK"}',
-#  'name': 'get_flight_info'}, 'type': 'function'}},
+
 print(second_response)
 
 # --------------------------------------------------------------
