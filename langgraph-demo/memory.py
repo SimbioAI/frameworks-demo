@@ -63,7 +63,6 @@ workflow.add_conditional_edges(
     "conversation",
     should_continue,
 )
-
 workflow.add_edge("summarize_conversation", END)
 
 app = workflow.compile(checkpointer=memory)
