@@ -15,8 +15,9 @@ email_drafting:
     - Pitch: We are a platform that allows you to orchestrate AI Agents for
     automations to any vertical.
 
-    Use the following information:
-    Personal Info: {personal_info}
+    Use the following information carefully to extract the necessary and accurate 
+    information without changing it especially the email address for the ouput:
+    Personal Info: {personal_info} 
     Company Info: {company_info}
     Lead Score: {lead_score}
   expected_output: > 
@@ -30,13 +31,18 @@ email_drafting:
 
 engagement_optimization:
   description: >
-    Review the personalized email draft subject and content and optimize it with strong CTAs
-    and engagement hooks.
+    Review the personalized email pydantic draft and optimize it with strong CTAs
+    and engagement hooks. 
     Keep in mind they reached out and filled a lead form.
     Keep it short and to the point.
-    Remove complex jargon.
     Ensure the email encourages the lead to schedule a meeting or take
     another desired action immediately.
+
+    Use the following information carefully to extract the necessary and accurate 
+    information without changing it especially the email address for the ouput:
+    Personal Info: {personal_info} 
+    Company Info: {company_info}
+    Lead Score: {lead_score}
 
     Our Company and Product:
     - Company Name: CrewAI

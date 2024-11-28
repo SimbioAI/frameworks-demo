@@ -21,7 +21,7 @@ lead_data_collection:
       - ICP: Enterprise companies looking into Agentic automation.
       - Pitch: We are a platform that allows you to orchestrate AI Agents for automations to any vertical.
 
-    -Lead Data:
+    -Use Lead Data accurately and don't change it:
       {lead_data}
   expected_output: >
     A comprehensive data report including:
@@ -42,7 +42,7 @@ cultural_fit_analysis:
       - ICP: Enterprise companies looking into Agentic automation.
       - Pitch: We are a platform that allows you to orchestrate AI Agents for automations to any vertical.
 
-    - Lead Data:
+    - Use Lead Data accurately and don't change it:
       {lead_data}
   expected_output: >
     A detailed assessment report including:
@@ -67,12 +67,13 @@ lead_scoring_and_validation:
       - ICP: Enterprise companies looking into Agentic automation.
       - Pitch: We are a platform that allows you to orchestrate AI Agents for automations to any vertical.
 
-    - Lead Data:
+    - Use Lead Data carefully, accurately and don't change it:
       {lead_data}
   expected_output: >
     A validated lead score report including:
     - Final lead score (0-100) with scoring criteria.
     - A summary report detailing the scoring process, criteria used, and validation notes.
+    - Accurate data about the lead.
 
 
 
