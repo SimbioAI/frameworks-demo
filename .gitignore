@@ -4,3 +4,6 @@ env/
 
 # environment
 .env
+
+# VSCode workspace
+.code-workspace
