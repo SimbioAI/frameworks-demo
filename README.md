@@ -12,6 +12,8 @@ This project serves as a testing ground for different multi-agent scenarios, arc
 
 - Python 3.x
 - Git
+- VS Build Tools
+- Docker
 
 ### Installation
 
