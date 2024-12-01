@@ -1,0 +1,68 @@
+email_drafting:
+  description: >
+    Craft a highly personalized email using the lead's name, job title,
+    company information, and any relevant personal or company achievements.
+    The email should speak directly to the lead's interests and the needs
+    of their company.
+    This is not as cold outreach as it is a follow up to a lead form, so
+    keep it short and to the point.
+    Don't use any salutations or closing remarks, nor too complex sentences.
+
+    Our Company and Product:
+    - Company Name: CrewAI
+    - Product: Multi-Agent Orchestration Platform
+    - ICP: Enterprise companies looking into Agentic automation.
+    - Pitch: We are a platform that allows you to orchestrate AI Agents for
+    automations to any vertical.
+
+    Use the following information carefully to extract the necessary and accurate 
+    information without changing it especially the email address for the ouput:
+    Personal Info: {personal_info} 
+    Company Info: {company_info}
+    Lead Score: {lead_score}
+  expected_output: > 
+    Pydantic object containing
+    1. Email of the lead
+    2. Subject line
+    3. A personalized email content that:
+    - Addresses the lead by name
+    - Acknowledges their role and company
+    - Highlights how CrewAI can meet their specific needs or interests
+
+engagement_optimization:
+  description: >
+    Review the personalized email pydantic draft and optimize it with strong CTAs
+    and engagement hooks. 
+    Keep in mind they reached out and filled a lead form.
+    Keep it short and to the point.
+    Ensure the email encourages the lead to schedule a meeting or take
+    another desired action immediately.
+
+    Use the following information carefully to extract the necessary and accurate 
+    information without changing it especially the email address for the ouput:
+    Personal Info: {personal_info} 
+    Company Info: {company_info}
+    Lead Score: {lead_score}
+
+    Our Company and Product:
+    - Company Name: CrewAI
+    - Product: Multi-Agent Orchestration Platform
+    - ICP: Enterprise companies looking into Agentic automation.
+    - Pitch: We are a platform that allows you to orchestrate AI Agents
+    for automations to any vertical.
+  expected_output: >
+    An optimized email ready for sending.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
