@@ -1,0 +1,35 @@
+conduct_online_research:
+  description: >
+    Perform comprehensive online research on {topic}, leveraging real-time 
+    internet resources to gather the most current and relevant information. 
+    Use multiple credible sources to cross-validate findings and provide 
+    up-to-the-minute insights. Utilize advanced search techniques and 
+    verify the reliability of sources.
+  expected_output: >
+    A detailed research report synthesizing the latest information, 
+    including citations, key findings, emerging trends, and comprehensive context.
+
+generate_knowledge_based_response:
+  description: >
+    Analyze the query {topic} using the existing knowledge base. Draw connections 
+    between different areas of knowledge, provide deep contextual understanding, 
+    and generate a comprehensive response that demonstrates sophisticated reasoning 
+    and analytical capabilities without relying on real-time external data when needed.
+  expected_output: >
+    An in-depth, analytically rich response through sophisticated reasoning
+    when needed, drawing from extensive pre-existing knowledge, 
+    and presenting a nuanced, well-structured explanation.
+
+
+helpful_response:
+  description: >
+   You're a helpful assistant!
+    Read the query: {topic} and give the user a good and clear reply.
+  expected_output: >
+    A clear and concise message that helps the user.
+
+
+
+
+
+
