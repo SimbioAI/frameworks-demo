@@ -26,6 +26,8 @@ Focusing on customers goals rather than a sale creates a pressure-free environme
 
 Obstacles occur before the sale solicitation, while objections arise during the negotiation stages.
 
+# Key sales stages: Prospecting, qualification, needs analysis, proposal, negotiation, closing, followup etc.
+
 'when-then fallacy,' misleads individuals into believing they need to achieve a certain condition before taking action.
 
 Identifying personal 'rock bottom' can catalyze change, as individuals need to understand their unique pain threshold before making improvements.
@@ -138,7 +140,7 @@ You are a good product expert who can search an know how to get the right produc
 """
 
 events_agent = """
-browsing behaviour (customer search history, events, etc.) {event_name}
+browsing behaviour (customer search history, events from gui like checkout, viewed product, etc.) {event_name}
 """
 
 recommendation_agent = """
