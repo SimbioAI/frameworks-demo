@@ -11,8 +11,8 @@ import chainlit as cl
 import asyncio
 
 # Load environment variables
-from dotenv import load_dotenv, find_dotenv    
-load_dotenv(find_dotenv())
+from dotenv import load_dotenv
+load_dotenv("F:\\Social AI\\multiagent-framework\\.venv\\.env")
 
 #* Callback
 class MyCustomChainAsyncHandler(AsyncCallbackHandler):
